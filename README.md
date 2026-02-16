@@ -42,10 +42,11 @@ GEMINI_API_KEY=your_key_here
 From the project root:
 
 ```bash
-python frontend/tui.py .
+python frontend/tui.py [PATH]
 ```
 
-You can replace `.` with any folder path.
+- If `PATH` is omitted, the app opens the current working directory.
+- If `PATH` is provided, it must be an existing directory path.
 
 ## Main controls
 

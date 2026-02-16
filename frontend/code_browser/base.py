@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+from pathlib import Path
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -32,8 +32,9 @@ class CodeBrowserBase(App):
     selection_mode = var(False)
     path: reactive[str | None] = reactive(None)
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, root_path: str | Path, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.root_path = str(Path(root_path))
         self.buffers: dict[str, str] = {}
         self.saved_buffers: dict[str, str] = {}
         self.dirty_buffers: set[str] = set()
@@ -46,10 +47,9 @@ class CodeBrowserBase(App):
 
     def compose(self) -> ComposeResult:
         """Compose our UI."""
-        path = "./" if len(sys.argv) < 2 else sys.argv[1]
         yield Header()
         with Container():
-            yield DirectoryTree(path, id="tree-view")
+            yield DirectoryTree(self.root_path, id="tree-view")
             yield Static(id="code-static", expand=True)
             yield TextArea.code_editor(id="code-editor", read_only=True)
         with Container(id="request-panel"):
