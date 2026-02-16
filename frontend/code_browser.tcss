@@ -1,0 +1,67 @@
+Screen {
+    &:inline {
+        height: 50vh;
+    }
+}
+
+#tree-view {
+    display: none;
+    scrollbar-gutter: stable;
+    overflow: auto;
+    width: auto;
+    height: 100%;
+    dock: left;
+}
+
+CodeBrowser.-show-tree #tree-view {
+    display: block;
+    max-width: 50%;
+}
+
+#code-static,
+#code-editor {
+    width: 1fr;
+    height: 100%;
+    background: $surface;
+    scrollbar-gutter: stable;
+}
+
+#code-static {
+    display: none;
+    padding: 0 1;
+}
+
+#code-editor {
+    display: block;
+    border: none;
+}
+
+#request-panel {
+    display: none;
+    dock: bottom;
+    height: auto;
+    padding: 0 1 1 1;
+    background: $surface;
+    border-top: round $accent;
+}
+
+#request-label {
+    height: auto;
+    padding: 0 0 1 0;
+}
+
+#request-input {
+    width: 100%;
+}
+
+CodeBrowser.-insert-mode #code-static {
+    display: none;
+}
+
+CodeBrowser.-insert-mode #code-editor {
+    border: round $accent;
+}
+
+CodeBrowser.-request-mode #request-panel {
+    display: block;
+}
