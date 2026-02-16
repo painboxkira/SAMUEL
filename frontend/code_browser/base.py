@@ -12,7 +12,7 @@ from textual.widgets import DirectoryTree, Footer, Header, Input, Static, TextAr
 class CodeBrowserBase(App):
     """Textual code browser app."""
 
-    CSS_PATH = "code_browser.tcss"
+    CSS_PATH = str(Path(__file__).resolve().parent.parent / "code_browser.tcss")
     BINDINGS = [
         Binding("f", "toggle_files", "Toggle Files"),
         Binding("c", "toggle_request", "Code Request", priority=True),
@@ -58,7 +58,9 @@ class CodeBrowserBase(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.query_one(DirectoryTree).focus()
+        tree = self.query_one("#tree-view", DirectoryTree)
+        tree.focus()
+        self.call_after_refresh(tree.focus)
 
         def theme_change(_signal) -> None:
             """Force the syntax to use a different theme."""

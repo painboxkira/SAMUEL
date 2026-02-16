@@ -70,7 +70,9 @@ class WatchersMixin:
             language = self._language_for_code(path, code)
             if hasattr(code_view, "language"):
                 code_view.language = language
+            code_view.cursor_location = (0, 0)
             code_view.scroll_home(animate=False)
+            code_view.focus()
             self.sub_title = path
             return
         try:
@@ -91,5 +93,7 @@ class WatchersMixin:
             language = self._language_for_code(path, code)
             if hasattr(code_view, "language"):
                 code_view.language = language
+            code_view.cursor_location = (0, 0)
             code_view.scroll_home(animate=False)
+            code_view.focus()
             self.sub_title = path

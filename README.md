@@ -2,6 +2,11 @@
 
 A simple terminal code browser with AI-assisted code generation.
 
+## Project status
+
+- This project is currently a prototype.
+- The planned release target is a Linux binary distribution.
+
 ## What this project does
 
 This project has two parts:
@@ -17,6 +22,8 @@ You can open files, edit them, save changes, and ask Gemini to insert generated 
 - A Gemini API key (`GEMINI_API_KEY` or `GOOGLE_API_KEY`)
 
 ## Setup
+
+Using a Python virtual environment is strongly recommended for local development.
 
 1. Create and activate a virtual environment.
 2. Install dependencies:

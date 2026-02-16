@@ -1,7 +1,23 @@
+$cp-background: #090407;
+$cp-surface: #13080d;
+$cp-panel: #1b0a11;
+$cp-text: #ffd9e2;
+$cp-accent: #ff2a5a;
+$cp-accent-soft: #ff6a8e;
+
 Screen {
+    background: $cp-background;
+    color: $cp-text;
+
     &:inline {
         height: 50vh;
     }
+}
+
+Header,
+Footer {
+    background: $cp-panel;
+    color: $cp-accent;
 }
 
 #tree-view {
@@ -11,6 +27,9 @@ Screen {
     width: auto;
     height: 100%;
     dock: left;
+    background: $cp-panel;
+    color: $cp-text;
+    border-right: round $cp-accent;
 }
 
 CodeBrowser.-show-tree #tree-view {
@@ -22,7 +41,8 @@ CodeBrowser.-show-tree #tree-view {
 #code-editor {
     width: 1fr;
     height: 100%;
-    background: $surface;
+    background: $cp-surface;
+    color: $cp-text;
     scrollbar-gutter: stable;
 }
 
@@ -34,6 +54,7 @@ CodeBrowser.-show-tree #tree-view {
 #code-editor {
     display: block;
     border: none;
+    border-title-color: $cp-accent-soft;
 }
 
 #request-panel {
@@ -41,8 +62,8 @@ CodeBrowser.-show-tree #tree-view {
     dock: bottom;
     height: auto;
     padding: 0 1 1 1;
-    background: $surface;
-    border-top: round $accent;
+    background: $cp-panel;
+    border-top: round $cp-accent;
 }
 
 #request-label {
@@ -52,6 +73,9 @@ CodeBrowser.-show-tree #tree-view {
 
 #request-input {
     width: 100%;
+    background: $cp-surface;
+    color: $cp-text;
+    border: round $cp-accent;
 }
 
 CodeBrowser.-insert-mode #code-static {
@@ -59,7 +83,7 @@ CodeBrowser.-insert-mode #code-static {
 }
 
 CodeBrowser.-insert-mode #code-editor {
-    border: round $accent;
+    border: round $cp-accent;
 }
 
 CodeBrowser.-request-mode #request-panel {
