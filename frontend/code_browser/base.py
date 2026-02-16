@@ -14,7 +14,6 @@ class CodeBrowserBase(App):
 
     CSS_PATH = str(Path(__file__).resolve().parent.parent / "code_browser.tcss")
     BINDINGS = [
-        Binding("f", "toggle_files", "Toggle Files"),
         Binding("c", "toggle_request", "Code Request", priority=True),
         Binding("q", "quit", "Quit", priority=True),
         Binding("i", "toggle_insert", "Toggle Insert Mode"),

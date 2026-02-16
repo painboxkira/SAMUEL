@@ -57,7 +57,6 @@ python frontend/tui.py [PATH]
 
 ## Main controls
 
-- `f`: show/hide file tree
 - `i`: toggle insert mode
 - `escape`: exit insert mode or close request input
 - `c`: open code request input (Gemini)
