@@ -89,3 +89,15 @@ CodeBrowser.-insert-mode #code-editor {
 CodeBrowser.-request-mode #request-panel {
     display: block;
 }
+
+#file-tabs {
+    dock: top;
+    height: 3;
+    background: $cp-panel;
+    color: $cp-text;
+}
+
+#file-tabs Underline > .underline--bar {
+    color: $cp-accent;
+    background: $cp-panel;
+}

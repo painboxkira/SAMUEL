@@ -7,7 +7,9 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container
 from textual.reactive import reactive, var
-from textual.widgets import DirectoryTree, Footer, Header, Input, Static, TextArea
+from textual.widgets import DirectoryTree, Footer, Header, Input, Static, Tabs, TextArea
+
+from .widgets import FileTab, path_to_tab_id
 
 
 def _resolve_css_path() -> str:
@@ -43,6 +45,9 @@ class CodeBrowserBase(App):
         Binding("p", "paste_yank", "Paste Yank"),
         Binding("d", "delete_selection", "Delete Selection"),
         Binding("s", "save_all", "Save All"),
+        Binding("u", "undo", "Undo"),
+        Binding("r", "redo", "Redo"),
+        Binding("w", "close_tab", "Close Tab"),
         Binding("escape", "exit_insert", "Exit Insert Mode", priority=True),
     ]
 
@@ -64,10 +69,14 @@ class CodeBrowserBase(App):
         self._selection_anchor: tuple[int, int] | None = None
         self._yank_buffer = ""
         self._syncing_selection = False
+        self.open_tabs: list[str] = []
+        self.cursor_positions: dict[str, tuple[int, int]] = {}
+        self._switching_tab = False
 
     def compose(self) -> ComposeResult:
         """Compose our UI."""
         yield Header()
+        yield Tabs(id="file-tabs")
         with Container():
             yield DirectoryTree(self.root_path, id="tree-view")
             yield Static(id="code-static", expand=True)
@@ -110,5 +119,7 @@ class CodeBrowserBase(App):
             "paste_yank",
             "delete_selection",
         }:
+            return self.path is not None and not self.insert_mode and not self.request_mode
+        if action in {"undo", "redo", "close_tab"}:
             return self.path is not None and not self.insert_mode and not self.request_mode
         return None

@@ -3,8 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from textual.highlight import highlight
-from textual.widgets import Static, TextArea
+from textual.widgets import Static, Tabs, TextArea
 from textual.widgets.text_area import Selection
+
+from .widgets import ConfirmSaveScreen, FileTab, path_to_tab_id
 
 
 class ActionsMixin:
@@ -55,6 +57,7 @@ class ActionsMixin:
         else:
             self.dirty_buffers.add(self.path)
         self.query_one("#code-static", Static).update(highlight(current_text, path=self.path))
+        self._update_tab_label(self.path)
 
     def _replace_editor_text(self, text: str, cursor: tuple[int, int]) -> None:
         code_view = self.query_one("#code-editor", TextArea)
@@ -172,6 +175,7 @@ class ActionsMixin:
             return
 
         failed: list[str] = []
+        saved: list[str] = []
         for file_path in list(self.dirty_buffers):
             buffer_text = self.buffers.get(file_path)
             if buffer_text is None:
@@ -183,6 +187,10 @@ class ActionsMixin:
             else:
                 self.saved_buffers[file_path] = buffer_text
                 self.dirty_buffers.discard(file_path)
+                saved.append(file_path)
+
+        for file_path in saved:
+            self._update_tab_label(file_path)
 
         if self.path is not None and self.path in self.buffers:
             self.query_one("#code-static", Static).update(
@@ -193,3 +201,136 @@ class ActionsMixin:
             self.sub_title = f"FAILED TO SAVE: {len(failed)}"
         else:
             self.sub_title = "SAVED ALL"
+
+    # ── Tab helpers ──────────────────────────────────────────────
+
+    def _add_file_tab(self, path: str) -> None:
+        """Add a tab for the given file path."""
+        tabs = self.query_one("#file-tabs", Tabs)
+        dirty = path in self.dirty_buffers
+        tabs.add_tab(FileTab(file_path=path, dirty=dirty))
+
+    def _update_tab_label(self, path: str) -> None:
+        """Refresh a tab's label to reflect its current dirty state."""
+        tab_id = path_to_tab_id(path)
+        try:
+            tab = self.query_one(f"#{tab_id}", FileTab)
+        except Exception:
+            return
+        name = Path(path).name
+        prefix = "● " if path in self.dirty_buffers else ""
+        tab.label = f"{prefix}{name}"
+
+    def _save_file(self, path: str) -> bool:
+        """Save a single file buffer to disk. Returns True on success."""
+        buffer_text = self.buffers.get(path)
+        if buffer_text is None:
+            return False
+        try:
+            Path(path).write_text(buffer_text, encoding="utf-8")
+        except Exception:
+            return False
+        self.saved_buffers[path] = buffer_text
+        self.dirty_buffers.discard(path)
+        self._update_tab_label(path)
+        return True
+
+    def _close_tab(self, path: str) -> None:
+        """Close a tab and switch to an adjacent one."""
+        if path not in self.open_tabs:
+            return
+        idx = self.open_tabs.index(path)
+        self.open_tabs.remove(path)
+        self.buffers.pop(path, None)
+        self.saved_buffers.pop(path, None)
+        self.dirty_buffers.discard(path)
+        self.cursor_positions.pop(path, None)
+        tabs = self.query_one("#file-tabs", Tabs)
+        tab_id = path_to_tab_id(path)
+        tabs.remove_tab(tab_id)
+        if self.open_tabs:
+            new_idx = min(idx, len(self.open_tabs) - 1)
+            self.path = self.open_tabs[new_idx]
+        else:
+            self.path = None
+
+    def _handle_quit_confirm(self, result: str) -> None:
+        if result == "save":
+            self.action_save_all()
+            self.exit()
+        elif result == "discard":
+            self.exit()
+
+    def _handle_close_tab_confirm(self, path: str, result: str) -> None:
+        if result == "save":
+            self._save_file(path)
+            self._close_tab(path)
+        elif result == "discard":
+            self._close_tab(path)
+
+    # ── Undo / Redo ─────────────────────────────────────────────
+
+    def action_undo(self) -> None:
+        """Undo the last edit in the active file."""
+        if self.path is None or self.request_mode:
+            return
+        code_view = self.query_one("#code-editor", TextArea)
+        was_readonly = code_view.read_only
+        if was_readonly:
+            code_view.read_only = False
+        try:
+            code_view.undo()
+        except Exception:
+            self.sub_title = "UNDO UNAVAILABLE"
+            return
+        finally:
+            if was_readonly:
+                code_view.read_only = True
+        self._sync_active_buffer_from_editor()
+        self.sub_title = "UNDO"
+
+    def action_redo(self) -> None:
+        """Redo the last undone edit in the active file."""
+        if self.path is None or self.request_mode:
+            return
+        code_view = self.query_one("#code-editor", TextArea)
+        was_readonly = code_view.read_only
+        if was_readonly:
+            code_view.read_only = False
+        try:
+            code_view.redo()
+        except Exception:
+            self.sub_title = "REDO UNAVAILABLE"
+            return
+        finally:
+            if was_readonly:
+                code_view.read_only = True
+        self._sync_active_buffer_from_editor()
+        self.sub_title = "REDO"
+
+    # ── Quit / Close tab ────────────────────────────────────────
+
+    def action_quit(self) -> None:
+        """Quit with unsaved-changes guard."""
+        if self.insert_mode:
+            return
+        if self.dirty_buffers:
+            self.push_screen(
+                ConfirmSaveScreen("You have unsaved changes. Save before quitting?"),
+                callback=self._handle_quit_confirm,
+            )
+        else:
+            self.exit()
+
+    def action_close_tab(self) -> None:
+        """Close the current tab with unsaved-changes guard."""
+        if self.path is None or self.insert_mode or self.request_mode:
+            return
+        current_path = self.path
+        if current_path in self.dirty_buffers:
+            self.push_screen(
+                ConfirmSaveScreen(f"'{Path(current_path).name}' has unsaved changes."),
+                callback=lambda result: self._handle_close_tab_confirm(current_path, result),
+            )
+        else:
+            self._close_tab(current_path)

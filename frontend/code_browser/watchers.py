@@ -4,8 +4,10 @@ from pathlib import Path
 
 from rich.traceback import Traceback
 from textual.highlight import highlight
-from textual.widgets import Input, Static, TextArea
+from textual.widgets import Input, Static, Tabs, TextArea
 from textual.widgets.text_area import Selection
+
+from .widgets import path_to_tab_id
 
 
 class WatchersMixin:
@@ -61,35 +63,43 @@ class WatchersMixin:
             self._loading_buffer = False
             static_view.update("")
             return
+
         if path in self.buffers:
             code = self.buffers[path]
-            self._loading_buffer = True
-            code_view.text = code
-            self._loading_buffer = False
-            static_view.update(highlight(code, path=path))
-            self._apply_editor_language(path, code)
-            code_view.cursor_location = (0, 0)
-            code_view.scroll_home(animate=False)
-            code_view.focus()
-            self.sub_title = path
-            return
-        try:
-            code = Path(path).read_text(encoding="utf-8")
-        except Exception:
-            self._loading_buffer = True
-            code_view.text = "Unable to read file"
-            self._loading_buffer = False
-            static_view.update(Traceback(theme="github-dark", width=None))
-            self.sub_title = "ERROR"
         else:
+            try:
+                code = Path(path).read_text(encoding="utf-8")
+            except Exception:
+                self._loading_buffer = True
+                code_view.text = "Unable to read file"
+                self._loading_buffer = False
+                static_view.update(Traceback(theme="github-dark", width=None))
+                self.sub_title = "ERROR"
+                return
             self.buffers[path] = code
             self.saved_buffers[path] = code
-            self._loading_buffer = True
-            code_view.text = code
-            self._loading_buffer = False
-            static_view.update(highlight(code, path=path))
-            self._apply_editor_language(path, code)
-            code_view.cursor_location = (0, 0)
+
+        self._loading_buffer = True
+        code_view.text = code
+        self._loading_buffer = False
+        static_view.update(highlight(code, path=path))
+        self._apply_editor_language(path, code)
+        saved_cursor = self.cursor_positions.get(path, (0, 0))
+        code_view.cursor_location = saved_cursor
+        if path not in self.cursor_positions:
             code_view.scroll_home(animate=False)
-            code_view.focus()
-            self.sub_title = path
+        code_view.focus()
+        self.sub_title = path
+
+        # Activate the corresponding tab
+        tab_id = path_to_tab_id(path)
+        try:
+            tabs = self.query_one("#file-tabs", Tabs)
+            if tabs.active != tab_id:
+                self._switching_tab = True
+                try:
+                    tabs.active = tab_id
+                finally:
+                    self._switching_tab = False
+        except Exception:
+            pass

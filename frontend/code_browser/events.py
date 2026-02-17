@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from textual import events
-from textual.widgets import DirectoryTree, Input, TextArea
+from textual.widgets import DirectoryTree, Input, Tabs, TextArea
 from textual.widgets.text_area import Selection
+
+from .widgets import FileTab, path_to_tab_id
 
 
 class EventsMixin:
@@ -11,9 +13,31 @@ class EventsMixin:
     ) -> None:
         """Called when the user click a file in the directory tree."""
         event.stop()
+        file_path = str(event.path)
         if self.path is not None:
-            self.buffers[self.path] = self.query_one("#code-editor", TextArea).text
-        self.path = str(event.path)
+            code_view = self.query_one("#code-editor", TextArea)
+            self.cursor_positions[self.path] = code_view.cursor_location
+            self.buffers[self.path] = code_view.text
+        if file_path not in self.open_tabs:
+            self.open_tabs.append(file_path)
+            self._add_file_tab(file_path)
+        self.path = file_path
+
+    def on_tabs_tab_activated(self, event: Tabs.TabActivated) -> None:
+        """Switch to the file associated with the activated tab."""
+        if self._switching_tab:
+            return
+        tab = event.tab
+        if not isinstance(tab, FileTab):
+            return
+        file_path = tab.file_path
+        if file_path == self.path:
+            return
+        if self.path is not None:
+            code_view = self.query_one("#code-editor", TextArea)
+            self.cursor_positions[self.path] = code_view.cursor_location
+            self.buffers[self.path] = code_view.text
+        self.path = file_path
 
     def on_text_area_selection_changed(self, event: TextArea.SelectionChanged) -> None:
         """Keep TextArea native selection in sync while visual mode is enabled."""
@@ -98,6 +122,7 @@ class EventsMixin:
                 self.dirty_buffers.discard(self.path)
             else:
                 self.dirty_buffers.add(self.path)
+            self._update_tab_label(self.path)
         self.request_mode = False
         self.sub_title = "CODE INSERTED"
 
@@ -116,3 +141,4 @@ class EventsMixin:
             self.dirty_buffers.discard(self.path)
         else:
             self.dirty_buffers.add(self.path)
+        self._update_tab_label(self.path)
