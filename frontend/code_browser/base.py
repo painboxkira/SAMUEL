@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from textual.app import App, ComposeResult
@@ -9,10 +10,30 @@ from textual.reactive import reactive, var
 from textual.widgets import DirectoryTree, Footer, Header, Input, Static, TextArea
 
 
+def _resolve_css_path() -> str:
+    source_default = Path(__file__).resolve().parent.parent / "code_browser.tcss"
+    candidates = [source_default]
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        base = Path(meipass)
+        candidates = [
+            base / "code_browser.tcss",
+            base / "frontend" / "code_browser.tcss",
+            *candidates,
+        ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+
+    return str(source_default)
+
+
 class CodeBrowserBase(App):
     """Textual code browser app."""
 
-    CSS_PATH = str(Path(__file__).resolve().parent.parent / "code_browser.tcss")
+    CSS_PATH = _resolve_css_path()
     BINDINGS = [
         Binding("c", "toggle_request", "Code Request", priority=True),
         Binding("q", "quit", "Quit", priority=True),
