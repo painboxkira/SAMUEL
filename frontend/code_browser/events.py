@@ -21,6 +21,8 @@ class EventsMixin:
             return
         if self._syncing_selection:
             return
+        if self.insert_mode:
+            return
         if not self.selection_mode or self._selection_anchor is None:
             return
 
@@ -34,7 +36,7 @@ class EventsMixin:
 
     def on_key(self, event: events.Key) -> None:
         """Fallback for Escape when focused widgets consume key bindings."""
-        if event.key == "c" and not self.request_mode:
+        if event.key == "c" and not self.request_mode and not self.insert_mode:
             event.stop()
             self.action_toggle_request()
             return

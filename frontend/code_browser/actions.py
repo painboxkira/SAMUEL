@@ -80,6 +80,8 @@ class ActionsMixin:
         if not self.insert_mode and self.path is None:
             self.sub_title = "NO FILE OPEN"
             return
+        if not self.insert_mode:
+            self.selection_mode = False
         self.insert_mode = not self.insert_mode
 
     def action_toggle_request(self) -> None:

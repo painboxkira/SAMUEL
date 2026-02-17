@@ -82,6 +82,10 @@ class CodeBrowserBase(App):
         tree.focus()
         self.call_after_refresh(tree.focus)
 
+        register_languages = getattr(self, "_register_optional_languages", None)
+        if callable(register_languages):
+            register_languages()
+
         def theme_change(_signal) -> None:
             """Force the syntax to use a different theme."""
             self.watch_path(self.path)
@@ -90,6 +94,8 @@ class CodeBrowserBase(App):
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         """Enable/disable actions based on current mode and state."""
+        if action == "toggle_request":
+            return self.path is not None and not self.insert_mode and not self.request_mode
         if action == "quit":
             return not self.insert_mode
         if action == "exit_insert":

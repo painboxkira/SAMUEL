@@ -5,11 +5,29 @@ from pathlib import Path
 from pygments.lexers import guess_lexer
 from pygments.util import ClassNotFound
 from textual.widgets import TextArea
+from textual.widgets.text_area import LanguageDoesNotExist
 
 from bot.gaggle import Gaggle
 
 
 class LanguageMixin:
+    def _register_optional_languages(self) -> None:
+        code_view = self.query_one("#code-editor", TextArea)
+        if "c" in code_view.available_languages:
+            return
+
+        try:
+            from tree_sitter import Language
+            import tree_sitter_c
+
+            code_view.register_language(
+                "c",
+                Language(tree_sitter_c.language()),
+                tree_sitter_c.HIGHLIGHTS_QUERY,
+            )
+        except Exception:
+            return
+
     @staticmethod
     def _language_from_path(path: str) -> str | None:
         suffix = Path(path).suffix.lower()
@@ -105,7 +123,12 @@ class LanguageMixin:
         language = self._language_for_code(path, code)
         code_view = self.query_one("#code-editor", TextArea)
         if hasattr(code_view, "language"):
-            code_view.language = language
+            if code_view.language == language:
+                return
+            try:
+                code_view.language = language
+            except LanguageDoesNotExist:
+                code_view.language = None
 
     def _build_code_prompt(self, request_text: str) -> str:
         language = self._resolved_language_for_path(self.path)

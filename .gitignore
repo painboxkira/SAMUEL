@@ -17,6 +17,7 @@ dist/
 release/
 *.spec
 *.egg-info/
+scripts/build-fedora43.sh
 
 # Tool caches
 .pytest_cache/

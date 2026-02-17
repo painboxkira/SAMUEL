@@ -67,9 +67,7 @@ class WatchersMixin:
             code_view.text = code
             self._loading_buffer = False
             static_view.update(highlight(code, path=path))
-            language = self._language_for_code(path, code)
-            if hasattr(code_view, "language"):
-                code_view.language = language
+            self._apply_editor_language(path, code)
             code_view.cursor_location = (0, 0)
             code_view.scroll_home(animate=False)
             code_view.focus()
@@ -90,9 +88,7 @@ class WatchersMixin:
             code_view.text = code
             self._loading_buffer = False
             static_view.update(highlight(code, path=path))
-            language = self._language_for_code(path, code)
-            if hasattr(code_view, "language"):
-                code_view.language = language
+            self._apply_editor_language(path, code)
             code_view.cursor_location = (0, 0)
             code_view.scroll_home(animate=False)
             code_view.focus()
